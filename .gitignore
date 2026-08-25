@@ -1,0 +1,8 @@
+/build/
+/generated/
+/.cache/
+compile_commands.json
+*.profraw
+*.profdata
+.DS_Store
+

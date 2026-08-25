@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            cc: clang
+            cxx: clang++
+          - os: ubuntu-24.04
+            cc: gcc
+            cxx: g++
+          - os: macos-15
+            cc: clang
+            cxx: clang++
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config libyaml-dev libsimdjson-dev
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja pkgconf libyaml simdjson
+      - run: cmake --preset dev
+      - run: cmake --build --preset dev --parallel
+      - run: ctest --preset dev
+
+  sanitizers:
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [asan, ubsan, tsan]
+    runs-on: ubuntu-24.04
+    env:
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config libyaml-dev libsimdjson-dev
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }} --parallel
+      - run: ctest --preset ${{ matrix.preset }}
+
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install native dependencies
+        shell: pwsh
+        run: '& "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install libyaml:x64-windows simdjson:x64-windows'
+      - name: Configure
+        shell: pwsh
+        run: 'cmake -S . -B build/windows -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DSDKCC_BUILD_TESTS=ON -DSDKCC_BUILD_BENCHMARKS=OFF'
+      - run: cmake --build build/windows --parallel
+      - run: ctest --test-dir build/windows --output-on-failure
+

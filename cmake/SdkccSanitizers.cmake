@@ -1,0 +1,21 @@
+add_library(sdkcc_sanitizers INTERFACE)
+
+if(SDKCC_ENABLE_TSAN AND (SDKCC_ENABLE_ASAN OR SDKCC_ENABLE_UBSAN))
+  message(FATAL_ERROR "ThreadSanitizer cannot be combined with ASan/UBSan")
+endif()
+
+if(NOT MSVC)
+  if(SDKCC_ENABLE_ASAN)
+    target_compile_options(sdkcc_sanitizers INTERFACE -fsanitize=address -fno-omit-frame-pointer)
+    target_link_options(sdkcc_sanitizers INTERFACE -fsanitize=address)
+  endif()
+  if(SDKCC_ENABLE_UBSAN)
+    target_compile_options(sdkcc_sanitizers INTERFACE -fsanitize=undefined -fno-omit-frame-pointer)
+    target_link_options(sdkcc_sanitizers INTERFACE -fsanitize=undefined)
+  endif()
+  if(SDKCC_ENABLE_TSAN)
+    target_compile_options(sdkcc_sanitizers INTERFACE -fsanitize=thread -fno-omit-frame-pointer)
+    target_link_options(sdkcc_sanitizers INTERFACE -fsanitize=thread)
+  endif()
+endif()
+

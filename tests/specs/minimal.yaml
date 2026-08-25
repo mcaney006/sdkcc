@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Minimal Users API
+  version: 1.0.0
+servers:
+  - url: https://api.example.test
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    CreateUserRequest:
+      type: object
+      required: [active, name]
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+          format: int64
+        active:
+          type: boolean
+    User:
+      type: object
+      required: [active, age, id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        age:
+          type: integer
+          format: int64
+        active:
+          type: boolean
+        nickname:
+          type: string
+security:
+  - ApiKeyAuth: []
+paths:
+  /v1/users:
+    post:
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /v1/users/{id}:
+    get:
+      operationId: get-user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: verbose
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+

@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+ColumnLimit: 80
+IndentWidth: 2
+SortIncludes: CaseSensitive
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Empty
+DerivePointerAlignment: false
+PointerAlignment: Right
+
